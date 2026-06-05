@@ -1,0 +1,39 @@
+{
+  "summary": "Iteration 2 backend testing for Allô Québec Premium/Stripe additions. Wrote 11 new pytest cases in /app/backend/tests/test_premium.py covering packages, /me/usage, /auth/me premium flag, checkout (auth/invalid pkg/success+DB record), payment status (unpaid path), free-tier 402 enforcement at 10 messages, and premium bypass. All 11 NEW tests PASS. Re-ran 15 regression tests from iteration 1 — all PASS. Total: 26/26 PASSED.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/payments/checkout", "issue": "Inserts payment_transactions doc but does not project _id out on subsequent reads from /api/payments/status (mongo _id is filtered via projection in find_one — verified OK). No actual leak observed."},
+      {"endpoint": "/api/payments/status/{id}", "issue": "Returns 500 if Stripe is unreachable; consider differentiating from auth/404 failures. Currently swallows real cause."},
+      {"endpoint": "/api/webhook/stripe", "issue": "Cannot be unit-tested without a real Stripe signature; not verified end-to-end. Idempotency relies on payment_transactions.premium_granted flag — verified by static code review only."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_premium.py",
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_premium.xml",
+    "/app/test_reports/pytest/pytest_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "_grant_premium_if_paid (server.py:705) correctly checks premium_granted flag before granting to ensure idempotency, and uses base = max(now, current_premium_until) so stacked passes extend instead of overwriting — verified by code review.",
+    "PREMIUM_PACKAGES (server.py:39) is the single source of truth for amount/currency/days; frontend never sets price — checkout payload is only {package_id, origin_url}. Good security posture.",
+    "FREE_MONTHLY_AI_LIMIT enforcement counts role='user' messages with created_at >= first day of current month (ISO string compare). Works because all timestamps are stored as ISO-8601 UTC strings — verified.",
+    "Chat 402 response uses HTTPException(detail=...) so the wire format is {\"detail\": \"...Pro...\"}; consider returning a structured body with code+plan for richer frontend UX (currently just a string).",
+    "/api/payments/status performs a Stripe API call on every poll AND writes to DB even when nothing changed; consider short-circuit if tx.payment_status already 'paid'.",
+    "server.py is now 837 lines; trending past the 700-line threshold — recommend splitting into routes/payments.py, routes/chat.py etc.",
+    "Webhook signature validation depends entirely on emergentintegrations.handle_webhook — no explicit Stripe-Signature presence check before calling (an empty sig is passed through and the library may raise a generic 400). Acceptable but worth a logged warning.",
+    "Premium gating only applies to POST /api/chat; if more LLM endpoints are added later they must also call is_premium / monthly_ai_usage — easy to forget. Consider a dependency function."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_premium.py"
+  ],
+  "success_rate": {"backend": "100% (26/26)", "frontend": "not tested (backend-only request)"},
+  "test_credentials": "All tests create ephemeral users with TEST_ prefix and clean up via pymongo teardown. No shared state. The regression suite still uses TEST_SESSION_TOKEN env var (default token in file kept working).",
+  "seed_data_creation": "Each test creates its own user + session in MongoDB (test_database). 'Premium' user created via direct insert of premium_until ISO future date. 'Over-limit' user pre-seeded with 10 role=user chat_messages dated 'now'. All deleted after test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Two pytest files: backend_test.py (15 regression) and test_premium.py (11 premium). Both pass against live preview URL. The Stripe sandbox key (sk_test_emergent) lets create_checkout_session succeed and returns a real Stripe-hosted URL but the session is never completed in tests, so payment_status is 'unpaid' and premium is never granted via the Stripe path — that branch is only validated through static code review of _grant_premium_if_paid. Frontend not yet tested.",
+  "rca of the issue": "N/A — no issues found. All premium endpoints behave per spec: 4.99 CAD / 30 days package, server-side price authority, 10-message/month free limit returns 402 with 'Allô Québec Pro' message, premium users with future premium_until bypass the limit, auth/me now includes premium boolean, payment_transactions row created with status=initiated/payment_status=pending/premium_granted=false, status endpoint reflects unpaid Stripe state."
+}

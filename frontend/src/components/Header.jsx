@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
-import { MessageCircle, BookOpen, LayoutDashboard, LogOut, Menu, X } from "lucide-react";
+import { MessageCircle, BookOpen, LayoutDashboard, LogOut, Menu, X, Crown, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 const Header = () => {
@@ -15,7 +15,7 @@ const Header = () => {
               { to: "/chat", label: "Chat IA", icon: MessageCircle, testid: "nav-chat" },
               { to: "/guides", label: "Guides", icon: BookOpen, testid: "nav-guides" },
           ]
-        : [];
+        : [{ to: "/guides", label: "Guides", icon: BookOpen, testid: "nav-guides" }];
 
     const handleLogin = () => {
         // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
@@ -58,6 +58,19 @@ const Header = () => {
                 <div className="hidden md:flex items-center gap-3">
                     {user ? (
                         <div className="flex items-center gap-3">
+                            {user.premium ? (
+                                <Link
+                                    to="/pricing"
+                                    className="inline-flex items-center gap-1 bg-qc-yellow border-2 border-qc-ink rounded-full px-3 py-1.5 text-xs font-black uppercase shadow-brutalSm hover:-translate-y-0.5 transition-transform"
+                                    data-testid="pro-badge"
+                                >
+                                    <Crown className="w-3.5 h-3.5" strokeWidth={3} /> Pro
+                                </Link>
+                            ) : (
+                                <Link to="/pricing" className="btn-yellow text-sm py-2 px-3" data-testid="upgrade-btn">
+                                    <Sparkles className="w-4 h-4" strokeWidth={3} /> Passe Pro
+                                </Link>
+                            )}
                             {user.picture && (
                                 <img
                                     src={user.picture}
@@ -77,9 +90,14 @@ const Header = () => {
                             </button>
                         </div>
                     ) : (
-                        <button onClick={handleLogin} className="btn-yellow text-sm" data-testid="header-login-btn">
-                            Se connecter
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <Link to="/pricing" className="btn-white text-sm" data-testid="header-pricing-btn">
+                                Tarifs
+                            </Link>
+                            <button onClick={handleLogin} className="btn-yellow text-sm" data-testid="header-login-btn">
+                                Se connecter
+                            </button>
+                        </div>
                     )}
                 </div>
 

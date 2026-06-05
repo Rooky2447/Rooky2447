@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { api } from "@/lib/api";
 import Header from "@/components/Header";
-import { Send, Sparkles, Loader2, MessageCircle } from "lucide-react";
+import { Send, Sparkles, Loader2, MessageCircle, Crown, AlertTriangle } from "lucide-react";
 
 const SUGGESTIONS = [
     "Comment renouveler ma carte d'assurance maladie?",
@@ -18,9 +18,19 @@ const ChatPage = () => {
     const [input, setInput] = useState("");
     const [sending, setSending] = useState(false);
     const [sessionId, setSessionId] = useState(null);
+    const [usage, setUsage] = useState(null);
+    const [limitHit, setLimitHit] = useState(false);
     const scrollRef = useRef(null);
 
+    const refreshUsage = async () => {
+        try {
+            const r = await api.get("/me/usage");
+            setUsage(r.data);
+        } catch (e) {}
+    };
+
     useEffect(() => {
+        refreshUsage();
         const params = new URLSearchParams(location.search);
         const s = params.get("s");
         if (s) {
@@ -89,10 +99,26 @@ const ChatPage = () => {
                         <div className="w-10 h-10 bg-qc-yellow border-2 border-qc-ink rounded-xl shadow-brutalSm flex items-center justify-center">
                             <Sparkles className="w-5 h-5" strokeWidth={3} />
                         </div>
-                        <div>
+                        <div className="flex-1 min-w-0">
                             <p className="font-heading font-bold">Allô Québec · Chat IA</p>
                             <p className="text-xs text-qc-inkSoft">Powered by Claude · Réponses informatives seulement</p>
                         </div>
+                        {usage && (
+                            usage.premium ? (
+                                <span className="badge-brutal hidden sm:inline-flex" style={{ background: "#FFD500", color: "#111" }} data-testid="chat-pro-badge">
+                                    <Crown className="w-3 h-3" strokeWidth={3} /> Pro · Illimité
+                                </span>
+                            ) : (
+                                <Link
+                                    to="/pricing"
+                                    className="text-xs font-bold border-2 border-qc-ink rounded-lg px-2 py-1 bg-white shadow-brutalSm hover:bg-qc-yellow whitespace-nowrap"
+                                    data-testid="chat-usage-counter"
+                                    title="Passe Pro pour illimité"
+                                >
+                                    {usage.remaining}/{usage.limit} restants
+                                </Link>
+                            )
+                        )}
                     </div>
 
                     <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4" data-testid="chat-messages-container">
@@ -147,6 +173,18 @@ const ChatPage = () => {
                     </div>
 
                     <div className="border-t-2 border-qc-ink p-3 sm:p-4 bg-qc-cream">
+                        {limitHit && (
+                            <div className="mb-3 p-3 bg-qc-red/10 border-2 border-qc-red rounded-xl flex items-center gap-3" data-testid="limit-banner">
+                                <AlertTriangle className="w-5 h-5 text-qc-red flex-shrink-0" strokeWidth={3} />
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-bold text-sm">Limite mensuelle atteinte</p>
+                                    <p className="text-xs text-qc-inkSoft">Passe Pro pour des messages IA illimités.</p>
+                                </div>
+                                <Link to="/pricing" className="btn-yellow text-xs py-2 px-3" data-testid="limit-upgrade-btn">
+                                    <Crown className="w-3.5 h-3.5" strokeWidth={3} /> Pro
+                                </Link>
+                            </div>
+                        )}
                         <form
                             onSubmit={(e) => {
                                 e.preventDefault();

@@ -16,6 +16,12 @@ from typing import List, Optional
 from datetime import datetime, timezone, timedelta
 
 from emergentintegrations.llm.chat import LlmChat, UserMessage
+from emergentintegrations.payments.stripe.checkout import (
+    StripeCheckout,
+    CheckoutSessionRequest,
+    CheckoutSessionResponse,
+    CheckoutStatusResponse,
+)
 
 
 ROOT_DIR = Path(__file__).parent
@@ -27,6 +33,18 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY')
+
+# Server-side fixed packages (NEVER trust the frontend on price)
+PREMIUM_PACKAGES = {
+    "premium_monthly": {
+        "amount": 4.99,
+        "currency": "cad",
+        "days": 30,
+        "label": "Allô Québec Pro — 30 jours",
+    },
+}
+FREE_MONTHLY_AI_LIMIT = 10
 
 app = FastAPI(title="Allô Québec API")
 api_router = APIRouter(prefix="/api")
@@ -135,6 +153,33 @@ async def require_user(request: Request) -> dict:
     return user
 
 
+def is_premium(user: dict) -> bool:
+    """Check if user has active premium subscription."""
+    pu = user.get("premium_until")
+    if not pu:
+        return False
+    if isinstance(pu, str):
+        try:
+            pu = datetime.fromisoformat(pu)
+        except Exception:
+            return False
+    if pu.tzinfo is None:
+        pu = pu.replace(tzinfo=timezone.utc)
+    return pu > datetime.now(timezone.utc)
+
+
+async def monthly_ai_usage(user_id: str) -> int:
+    """Count user's AI messages this calendar month."""
+    now = datetime.now(timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+    count = await db.chat_messages.count_documents({
+        "user_id": user_id,
+        "role": "user",
+        "created_at": {"$gte": month_start},
+    })
+    return count
+
+
 # ============ AUTH ROUTES ============
 @api_router.post("/auth/session")
 async def create_session(payload: SessionRequest, response: Response):
@@ -213,7 +258,22 @@ async def create_session(payload: SessionRequest, response: Response):
 async def auth_me(request: Request):
     user = await require_user(request)
     user.pop("_id", None)
+    user["premium"] = is_premium(user)
     return user
+
+
+@api_router.get("/me/usage")
+async def me_usage(request: Request):
+    user = await require_user(request)
+    used = await monthly_ai_usage(user["user_id"])
+    premium = is_premium(user)
+    return {
+        "premium": premium,
+        "premium_until": user.get("premium_until"),
+        "used": used,
+        "limit": None if premium else FREE_MONTHLY_AI_LIMIT,
+        "remaining": None if premium else max(0, FREE_MONTHLY_AI_LIMIT - used),
+    }
 
 
 @api_router.post("/auth/logout")
@@ -230,6 +290,15 @@ async def logout(request: Request, response: Response):
 async def chat(payload: ChatMessageCreate, request: Request):
     user = await require_user(request)
     user_id = user["user_id"]
+
+    # Enforce free tier limit
+    if not is_premium(user):
+        used = await monthly_ai_usage(user_id)
+        if used >= FREE_MONTHLY_AI_LIMIT:
+            raise HTTPException(
+                status_code=402,
+                detail=f"Limite mensuelle atteinte ({FREE_MONTHLY_AI_LIMIT} messages). Passe à Allô Québec Pro pour une utilisation illimitée.",
+            )
 
     # Get or create chat session
     chat_session_id = payload.session_id
@@ -566,6 +635,174 @@ async def seed_guides():
             await db.guides.insert_one({"id": str(uuid.uuid4()), **g})
             count += 1
     return {"seeded": count, "total": len(GUIDES_SEED)}
+
+
+# ============ PAYMENTS (Stripe) ============
+class CheckoutPayload(BaseModel):
+    package_id: str
+    origin_url: str
+
+
+@api_router.get("/payments/packages")
+async def list_packages():
+    """Public list of premium packages."""
+    return PREMIUM_PACKAGES
+
+
+@api_router.post("/payments/checkout")
+async def create_checkout(payload: CheckoutPayload, request: Request):
+    user = await require_user(request)
+    pkg = PREMIUM_PACKAGES.get(payload.package_id)
+    if not pkg:
+        raise HTTPException(status_code=400, detail="Forfait invalide")
+    if not STRIPE_API_KEY:
+        raise HTTPException(status_code=500, detail="Stripe non configuré")
+
+    host_url = str(request.base_url)
+    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+
+    success_url = f"{payload.origin_url.rstrip('/')}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{payload.origin_url.rstrip('/')}/pricing"
+    metadata = {
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "package_id": payload.package_id,
+        "days": str(pkg["days"]),
+    }
+    req = CheckoutSessionRequest(
+        amount=float(pkg["amount"]),
+        currency=pkg["currency"],
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    try:
+        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(req)
+    except Exception as e:
+        logger.exception("Stripe checkout creation failed")
+        raise HTTPException(status_code=500, detail=f"Erreur Stripe: {str(e)}")
+
+    await db.payment_transactions.insert_one({
+        "session_id": session.session_id,
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "package_id": payload.package_id,
+        "amount": float(pkg["amount"]),
+        "currency": pkg["currency"],
+        "days": pkg["days"],
+        "metadata": metadata,
+        "status": "initiated",
+        "payment_status": "pending",
+        "premium_granted": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+
+    return {"url": session.url, "session_id": session.session_id}
+
+
+async def _grant_premium_if_paid(session_id: str, status_obj: CheckoutStatusResponse):
+    """Idempotently grant premium days when payment is confirmed."""
+    tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if not tx:
+        logger.warning("Transaction not found for session_id=%s", session_id)
+        return None
+
+    update = {
+        "status": status_obj.status,
+        "payment_status": status_obj.payment_status,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    if status_obj.payment_status == "paid" and not tx.get("premium_granted"):
+        days = int(tx.get("days", 30))
+        user = await db.users.find_one({"user_id": tx["user_id"]}, {"_id": 0})
+        now = datetime.now(timezone.utc)
+        current = user.get("premium_until") if user else None
+        if isinstance(current, str):
+            try:
+                current = datetime.fromisoformat(current)
+            except Exception:
+                current = None
+        if current and current.tzinfo is None:
+            current = current.replace(tzinfo=timezone.utc)
+        base = current if (current and current > now) else now
+        new_until = (base + timedelta(days=days)).isoformat()
+        await db.users.update_one(
+            {"user_id": tx["user_id"]},
+            {"$set": {"premium_until": new_until}},
+        )
+        update["premium_granted"] = True
+        update["premium_until"] = new_until
+        logger.info("Premium granted: user=%s until=%s", tx["user_id"], new_until)
+
+    await db.payment_transactions.update_one(
+        {"session_id": session_id}, {"$set": update}
+    )
+    return update
+
+
+@api_router.get("/payments/status/{session_id}")
+async def get_payment_status(session_id: str, request: Request):
+    user = await require_user(request)
+    tx = await db.payment_transactions.find_one(
+        {"session_id": session_id, "user_id": user["user_id"]}, {"_id": 0}
+    )
+    if not tx:
+        raise HTTPException(status_code=404, detail="Transaction introuvable")
+
+    if not STRIPE_API_KEY:
+        raise HTTPException(status_code=500, detail="Stripe non configuré")
+
+    host_url = str(request.base_url)
+    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+
+    try:
+        status_obj: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+    except Exception as e:
+        logger.exception("Stripe status check failed")
+        raise HTTPException(status_code=500, detail=f"Erreur Stripe: {str(e)}")
+
+    await _grant_premium_if_paid(session_id, status_obj)
+
+    tx_after = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    return {
+        "status": status_obj.status,
+        "payment_status": status_obj.payment_status,
+        "amount_total": status_obj.amount_total,
+        "currency": status_obj.currency,
+        "premium_granted": tx_after.get("premium_granted", False) if tx_after else False,
+        "premium_until": tx_after.get("premium_until") if tx_after else None,
+    }
+
+
+@api_router.post("/webhook/stripe")
+async def stripe_webhook(request: Request):
+    body = await request.body()
+    sig = request.headers.get("Stripe-Signature", "")
+    if not STRIPE_API_KEY:
+        raise HTTPException(status_code=500, detail="Stripe non configuré")
+
+    host_url = str(request.base_url)
+    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    try:
+        evt = await stripe_checkout.handle_webhook(body, sig)
+    except Exception as e:
+        logger.exception("Webhook handling failed")
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # If we have a session_id, sync status + grant premium
+    sess_id = getattr(evt, "session_id", None)
+    if sess_id:
+        try:
+            status_obj = await stripe_checkout.get_checkout_status(sess_id)
+            await _grant_premium_if_paid(sess_id, status_obj)
+        except Exception:
+            logger.exception("Failed to reconcile webhook session %s", sess_id)
+    return {"received": True}
 
 
 @api_router.get("/")

@@ -7,6 +7,8 @@ import ChatPage from "@/pages/ChatPage";
 import GuidesPage from "@/pages/GuidesPage";
 import GuideDetail from "@/pages/GuideDetail";
 import AuthCallback from "@/pages/AuthCallback";
+import PricingPage from "@/pages/PricingPage";
+import PaymentSuccess from "@/pages/PaymentSuccess";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const AppRouter = () => {
@@ -36,6 +38,15 @@ const AppRouter = () => {
             />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
+            <Route path="/pricing" element={<PricingPage />} />
+            <Route
+                path="/payment/success"
+                element={
+                    <ProtectedRoute>
+                        <PaymentSuccess />
+                    </ProtectedRoute>
+                }
+            />
             <Route path="*" element={<Landing />} />
         </Routes>
     );
