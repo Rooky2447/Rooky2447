@@ -139,13 +139,23 @@ async def require_user(request: Request) -> dict:
 @api_router.post("/auth/session")
 async def create_session(payload: SessionRequest, response: Response):
     """Exchange session_id from Emergent OAuth for a session_token."""
-    async with httpx.AsyncClient(timeout=15.0) as http_client:
-        r = await http_client.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": payload.session_id},
-        )
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as http_client:
+            r = await http_client.get(
+                "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
+                headers={"X-Session-ID": payload.session_id},
+            )
+    except Exception as e:
+        logger.exception("Network error contacting Emergent auth")
+        raise HTTPException(status_code=502, detail=f"Erreur réseau auth: {str(e)}")
+
     if r.status_code != 200:
-        raise HTTPException(status_code=401, detail="Session invalide")
+        logger.warning("Emergent auth returned %s: %s (session_id_prefix=%s)",
+                       r.status_code, r.text[:200], payload.session_id[:8])
+        raise HTTPException(
+            status_code=401,
+            detail=f"Session invalide ({r.status_code}). Le lien de connexion est peut-être expiré ou déjà utilisé. Reconnecte-toi.",
+        )
     data = r.json()
     email = data["email"]
     name = data.get("name", email)
