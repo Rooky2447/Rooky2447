@@ -26,7 +26,9 @@ const ChatPage = () => {
         try {
             const r = await api.get("/me/usage");
             setUsage(r.data);
-        } catch (e) {}
+        } catch (err) {
+            console.error("Failed to load usage", err);
+        }
     };
 
     useEffect(() => {
@@ -39,7 +41,9 @@ const ChatPage = () => {
                 try {
                     const r = await api.get(`/chat/sessions/${s}/messages`);
                     setMessages(r.data);
-                } catch (e) {}
+                } catch (err) {
+                    console.error("Failed to load chat messages", err);
+                }
             })();
         } else {
             setSessionId(null);
@@ -132,7 +136,7 @@ const ChatPage = () => {
                                 <div className="grid sm:grid-cols-2 gap-2 max-w-2xl mx-auto">
                                     {SUGGESTIONS.map((s, i) => (
                                         <button
-                                            key={i}
+                                            key={s}
                                             onClick={() => send(s)}
                                             className="text-left p-3 bg-white border-2 border-qc-ink rounded-xl shadow-brutalSm hover:-translate-y-0.5 hover:shadow-brutal transition-all text-sm font-medium"
                                             data-testid={`suggestion-${i}`}

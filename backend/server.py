@@ -329,6 +329,7 @@ async def chat(payload: ChatMessageCreate, request: Request):
     await db.chat_messages.insert_one(user_msg.copy())
 
     # Build chat with full history by replaying messages in a fresh LlmChat
+    ai_text: str = ""
     try:
         chat_client = LlmChat(
             api_key=EMERGENT_LLM_KEY,
@@ -677,11 +678,14 @@ async def create_checkout(payload: CheckoutPayload, request: Request):
         cancel_url=cancel_url,
         metadata=metadata,
     )
+    session: Optional[CheckoutSessionResponse] = None
     try:
-        session: CheckoutSessionResponse = await stripe_checkout.create_checkout_session(req)
+        session = await stripe_checkout.create_checkout_session(req)
     except Exception as e:
         logger.exception("Stripe checkout creation failed")
         raise HTTPException(status_code=500, detail=f"Erreur Stripe: {str(e)}")
+    if session is None:
+        raise HTTPException(status_code=500, detail="Erreur Stripe: session vide")
 
     await db.payment_transactions.insert_one({
         "session_id": session.session_id,
@@ -759,11 +763,14 @@ async def get_payment_status(session_id: str, request: Request):
     webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
     stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
 
+    status_obj: Optional[CheckoutStatusResponse] = None
     try:
-        status_obj: CheckoutStatusResponse = await stripe_checkout.get_checkout_status(session_id)
+        status_obj = await stripe_checkout.get_checkout_status(session_id)
     except Exception as e:
         logger.exception("Stripe status check failed")
         raise HTTPException(status_code=500, detail=f"Erreur Stripe: {str(e)}")
+    if status_obj is None:
+        raise HTTPException(status_code=500, detail="Erreur Stripe: statut vide")
 
     await _grant_premium_if_paid(session_id, status_obj)
 

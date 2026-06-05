@@ -61,11 +61,12 @@ const GuideDetail = () => {
                     </h2>
                     <ol className="space-y-3">
                         {guide.steps.map((s, i) => {
-                            const isChecked = checked[i];
+                            const stepKey = s.title;
+                            const isChecked = checked[stepKey];
                             return (
-                                <li key={i}>
+                                <li key={stepKey}>
                                     <button
-                                        onClick={() => setChecked({ ...checked, [i]: !isChecked })}
+                                        onClick={() => setChecked({ ...checked, [stepKey]: !isChecked })}
                                         className={`w-full text-left p-4 border-2 border-qc-ink rounded-xl flex gap-3 items-start transition-all ${
                                             isChecked ? "bg-qc-green/20 shadow-brutalSm" : "bg-white shadow-brutalSm hover:-translate-y-0.5 hover:shadow-brutal"
                                         }`}
@@ -93,7 +94,7 @@ const GuideDetail = () => {
                     <h2 className="font-heading font-bold text-2xl mb-4">Liens utiles</h2>
                     <ul className="space-y-2">
                         {guide.resources.map((r, i) => (
-                            <li key={i}>
+                            <li key={r.url || r.label}>
                                 <a
                                     href={r.url}
                                     target="_blank"
@@ -115,8 +116,8 @@ const GuideDetail = () => {
                             <HelpCircle className="w-6 h-6 text-qc-blue" strokeWidth={3} /> Questions fréquentes
                         </h2>
                         <ul className="space-y-3">
-                            {guide.faq.map((f, i) => (
-                                <li key={i} className="p-4 bg-qc-cream border-2 border-qc-ink rounded-xl">
+                            {guide.faq.map((f) => (
+                                <li key={f.q} className="p-4 bg-qc-cream border-2 border-qc-ink rounded-xl">
                                     <p className="font-bold mb-1">{f.q}</p>
                                     <p className="text-sm text-qc-inkSoft">{f.a}</p>
                                 </li>

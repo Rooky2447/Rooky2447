@@ -85,10 +85,10 @@ const PricingPage = () => {
                         <p className="font-black text-4xl mb-1">0$ <span className="text-lg font-normal text-qc-inkSoft">/ mois</span></p>
                         <p className="text-sm text-qc-inkSoft mb-6">Pour découvrir.</p>
                         <ul className="space-y-3 mb-6">
-                            {FREE_BENEFITS.map((b, i) => {
+                            {FREE_BENEFITS.map((b) => {
                                 const Icon = b.icon;
                                 return (
-                                    <li key={i} className="flex items-start gap-2">
+                                    <li key={b.label} className="flex items-start gap-2">
                                         <span className="w-6 h-6 bg-qc-green border-2 border-qc-ink rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <Icon className="w-3.5 h-3.5 text-white" strokeWidth={3} />
                                         </span>
@@ -120,10 +120,10 @@ const PricingPage = () => {
                         </p>
                         <p className="text-sm text-qc-ink/70 mb-6">Tout pour démêler ta vie administrative.</p>
                         <ul className="space-y-3 mb-6">
-                            {PRO_BENEFITS.map((b, i) => {
+                            {PRO_BENEFITS.map((b) => {
                                 const Icon = b.icon;
                                 return (
-                                    <li key={i} className="flex items-start gap-2">
+                                    <li key={b.label} className="flex items-start gap-2">
                                         <span className="w-6 h-6 bg-qc-ink border-2 border-qc-ink rounded-md flex items-center justify-center flex-shrink-0 mt-0.5">
                                             <Icon className="w-3.5 h-3.5 text-qc-yellow" strokeWidth={3} />
                                         </span>
