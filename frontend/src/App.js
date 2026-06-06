@@ -9,6 +9,11 @@ import GuideDetail from "@/pages/GuideDetail";
 import AuthCallback from "@/pages/AuthCallback";
 import PricingPage from "@/pages/PricingPage";
 import PaymentSuccess from "@/pages/PaymentSuccess";
+import Account from "@/pages/Account";
+import NotFound from "@/pages/NotFound";
+import Privacy from "@/pages/legal/Privacy";
+import Terms from "@/pages/legal/Terms";
+import Disclaimer from "@/pages/legal/Disclaimer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 const AppRouter = () => {
@@ -36,6 +41,14 @@ const AppRouter = () => {
                     </ProtectedRoute>
                 }
             />
+            <Route
+                path="/account"
+                element={
+                    <ProtectedRoute>
+                        <Account />
+                    </ProtectedRoute>
+                }
+            />
             <Route path="/guides" element={<GuidesPage />} />
             <Route path="/guides/:slug" element={<GuideDetail />} />
             <Route path="/pricing" element={<PricingPage />} />
@@ -47,7 +60,10 @@ const AppRouter = () => {
                     </ProtectedRoute>
                 }
             />
-            <Route path="*" element={<Landing />} />
+            <Route path="/legal/privacy" element={<Privacy />} />
+            <Route path="/legal/terms" element={<Terms />} />
+            <Route path="/legal/disclaimer" element={<Disclaimer />} />
+            <Route path="*" element={<NotFound />} />
         </Routes>
     );
 };

@@ -148,7 +148,11 @@ const Landing = () => {
             <footer className="border-t-2 border-qc-ink py-8 px-4 sm:px-6 bg-qc-cream">
                 <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
                     <p className="font-bold">Allô Québec · Fait avec ❤ au QC</p>
-                    <p className="text-sm text-qc-inkSoft">Info uniquement · Pas un conseil juridique formel</p>
+                    <div className="flex flex-wrap gap-4 text-sm text-qc-inkSoft">
+                        <a href="/legal/privacy" className="hover:underline">Confidentialité</a>
+                        <a href="/legal/terms" className="hover:underline">Conditions</a>
+                        <a href="/legal/disclaimer" className="hover:underline">Avis important</a>
+                    </div>
                 </div>
             </footer>
         </div>

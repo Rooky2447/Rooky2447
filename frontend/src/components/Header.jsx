@@ -77,12 +77,14 @@ const Header = () => {
                                 </Link>
                             )}
                             {user.picture && (
-                                <img
-                                    src={user.picture}
-                                    alt={user.name}
-                                    className="w-9 h-9 rounded-full border-2 border-qc-ink"
-                                    data-testid="user-avatar"
-                                />
+                                <Link to="/account" data-testid="user-avatar-link">
+                                    <img
+                                        src={user.picture}
+                                        alt={user.name}
+                                        className="w-9 h-9 rounded-full border-2 border-qc-ink hover:-translate-y-0.5 transition-transform"
+                                        data-testid="user-avatar"
+                                    />
+                                </Link>
                             )}
                             <button
                                 onClick={logout}

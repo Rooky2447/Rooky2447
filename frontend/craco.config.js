@@ -29,6 +29,8 @@ let webpackConfig = {
       rules: {
         "react-hooks/rules-of-hooks": "error",
         "react-hooks/exhaustive-deps": "warn",
+        // Unknown rule used by stricter linters — declare as no-op to suppress build warnings
+        "react-hooks/set-state-in-effect": "off",
       },
     },
   },

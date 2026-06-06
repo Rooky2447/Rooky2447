@@ -1,0 +1,11 @@
+{
+    "short_name": "Allô QC",
+    "name": "Allô Québec",
+    "description": "Assistant IA pour les démarches au Québec",
+    "icons": [],
+    "start_url": "/",
+    "display": "standalone",
+    "theme_color": "#FFD500",
+    "background_color": "#FFFDF9",
+    "lang": "fr-CA"
+}
