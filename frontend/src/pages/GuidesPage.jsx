@@ -28,7 +28,7 @@ const GuidesPage = () => {
             <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
                 <div className="mb-8 animate-fade-up">
                     <h1 className="font-heading font-black text-4xl sm:text-5xl">Guides pratiques</h1>
-                    <p className="mt-3 text-lg text-qc-inkSoft">Tout ce qu'il te faut, expliqué simplement.</p>
+                    <p className="mt-3 text-lg text-qc-inkSoft">Tout ce qu&apos;il te faut, expliqué simplement.</p>
                 </div>
 
                 <div className="card-brutal p-4 mb-8 flex flex-col sm:flex-row gap-3">

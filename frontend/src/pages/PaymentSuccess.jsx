@@ -76,11 +76,11 @@ const PaymentSuccess = () => {
                         </span>
                         <h1 className="font-heading font-black text-3xl mb-2">Merci! 🎉</h1>
                         <p className="text-qc-inkSoft mb-6">
-                            Ton accès Premium est actif pour 30 jours. Profite de l'IA illimitée!
+                            Ton accès Premium est actif pour 30 jours. Profite de l&apos;IA illimitée!
                         </p>
                         {details?.premium_until && (
                             <p className="text-sm text-qc-inkSoft mb-6">
-                                Valide jusqu'au {new Date(details.premium_until).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" })}
+                                Valide jusqu&apos;au {new Date(details.premium_until).toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                         )}
                         <Link to="/chat" className="btn-yellow w-full" data-testid="goto-chat-btn">
@@ -98,7 +98,7 @@ const PaymentSuccess = () => {
                             {status === "expired" ? "Session expirée" : "Paiement non confirmé"}
                         </h1>
                         <p className="text-qc-inkSoft mb-6">
-                            On n'a pas pu confirmer ton paiement. Si tu vois un débit sur ta carte, attends quelques minutes et rafraîchis. Sinon réessaie.
+                            On n&apos;a pas pu confirmer ton paiement. Si tu vois un débit sur ta carte, attends quelques minutes et rafraîchis. Sinon réessaie.
                         </p>
                         <div className="flex flex-col gap-2">
                             <Link to="/pricing" className="btn-yellow" data-testid="retry-pricing-btn">Réessayer</Link>

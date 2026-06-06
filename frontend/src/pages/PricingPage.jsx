@@ -71,7 +71,7 @@ const PricingPage = () => {
                         Passe à <span className="bg-qc-yellow border-2 border-qc-ink rounded-xl px-3 inline-block -rotate-1 shadow-brutal">Allô Québec Pro</span>
                     </h1>
                     <p className="mt-5 text-lg text-qc-inkSoft max-w-2xl mx-auto">
-                        Débloque l'IA illimitée pour démêler toutes tes démarches sans limite. Annule en tout temps.
+                        Débloque l&apos;IA illimitée pour démêler toutes tes démarches sans limite. Annule en tout temps.
                     </p>
                 </div>
 
@@ -168,16 +168,16 @@ const PricingPage = () => {
                     <h3 className="font-heading font-bold text-2xl mb-4">Questions fréquentes</h3>
                     <div className="space-y-4">
                         <div>
-                            <p className="font-bold">C'est un abonnement automatique?</p>
+                            <p className="font-bold">C&apos;est un abonnement automatique?</p>
                             <p className="text-qc-inkSoft text-sm">Non. Chaque paiement débloque 30 jours. Tu renouvelles seulement si tu le veux.</p>
                         </div>
                         <div>
                             <p className="font-bold">Je peux annuler?</p>
-                            <p className="text-qc-inkSoft text-sm">Comme c'est pas un abonnement récurrent, t'as rien à canceller. Juste arrête de renouveler.</p>
+                            <p className="text-qc-inkSoft text-sm">Comme c&apos;est pas un abonnement récurrent, t&apos;as rien à canceller. Juste arrête de renouveler.</p>
                         </div>
                         <div>
                             <p className="font-bold">Mes données sont en sécurité?</p>
-                            <p className="text-qc-inkSoft text-sm">Oui. Aucun numéro de carte n'est stocké chez nous. Stripe gère le paiement (PCI-DSS).</p>
+                            <p className="text-qc-inkSoft text-sm">Oui. Aucun numéro de carte n&apos;est stocké chez nous. Stripe gère le paiement (PCI-DSS).</p>
                         </div>
                     </div>
                 </div>

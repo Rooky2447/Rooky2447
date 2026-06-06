@@ -1,12 +1,12 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { MessageCircle, BookOpen, LayoutDashboard, LogOut, Menu, X, Crown, Sparkles } from "lucide-react";
 import { useState } from "react";
+import MobileMenu from "@/components/MobileMenu";
 
 const Header = () => {
     const { user, logout } = useAuth();
     const location = useLocation();
-    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
 
     const links = user
@@ -23,10 +23,16 @@ const Header = () => {
         window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
     };
 
+    const isActive = (to) => location.pathname === to || location.pathname.startsWith(to + "/");
+
     return (
         <header className="sticky top-0 z-40 bg-qc-cream border-b-2 border-qc-ink">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-                <Link to={user ? "/dashboard" : "/"} className="flex items-center gap-2 group" data-testid="logo-link">
+                <Link
+                    to={user ? "/dashboard" : "/"}
+                    className="flex items-center gap-2 group"
+                    data-testid="logo-link"
+                >
                     <div className="w-10 h-10 bg-qc-yellow border-2 border-qc-ink rounded-xl shadow-brutalSm flex items-center justify-center font-black text-xl group-hover:rotate-3 transition-transform">
                         Q
                     </div>
@@ -36,14 +42,13 @@ const Header = () => {
                 <nav className="hidden md:flex items-center gap-2">
                     {links.map((l) => {
                         const Icon = l.icon;
-                        const active = location.pathname === l.to || location.pathname.startsWith(l.to + "/");
                         return (
                             <Link
                                 key={l.to}
                                 to={l.to}
                                 data-testid={l.testid}
                                 className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border-2 font-bold transition-all ${
-                                    active
+                                    isActive(l.to)
                                         ? "bg-qc-yellow border-qc-ink shadow-brutalSm"
                                         : "border-transparent hover:border-qc-ink hover:bg-white"
                                 }`}
@@ -111,32 +116,13 @@ const Header = () => {
             </div>
 
             {open && (
-                <div className="md:hidden border-t-2 border-qc-ink bg-qc-cream px-4 py-3 space-y-2">
-                    {links.map((l) => {
-                        const Icon = l.icon;
-                        return (
-                            <Link
-                                key={l.to}
-                                to={l.to}
-                                onClick={() => setOpen(false)}
-                                className="flex items-center gap-2 px-4 py-3 bg-white border-2 border-qc-ink rounded-xl font-bold"
-                                data-testid={`mobile-${l.testid}`}
-                            >
-                                <Icon className="w-4 h-4" strokeWidth={2.5} />
-                                {l.label}
-                            </Link>
-                        );
-                    })}
-                    {user ? (
-                        <button onClick={logout} className="w-full btn-white text-sm" data-testid="mobile-logout-btn">
-                            <LogOut className="w-4 h-4" strokeWidth={2.5} /> Quitter
-                        </button>
-                    ) : (
-                        <button onClick={handleLogin} className="w-full btn-yellow text-sm" data-testid="mobile-login-btn">
-                            Se connecter
-                        </button>
-                    )}
-                </div>
+                <MobileMenu
+                    user={user}
+                    links={links}
+                    onClose={() => setOpen(false)}
+                    onLogin={handleLogin}
+                    onLogout={logout}
+                />
             )}
         </header>
     );

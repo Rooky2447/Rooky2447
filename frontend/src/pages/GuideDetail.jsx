@@ -129,10 +129,10 @@ const GuideDetail = () => {
                 <div className="card-brutal p-6 bg-qc-yellow flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div>
                         <h3 className="font-heading font-bold text-xl">Une question spécifique?</h3>
-                        <p className="text-sm">Demande à l'IA, elle connaît les détails.</p>
+                        <p className="text-sm">Demande à l&apos;IA, elle connaît les détails.</p>
                     </div>
                     <Link to="/chat" className="btn-ink text-sm" data-testid="ask-ai-cta">
-                        <MessageCircle className="w-4 h-4" strokeWidth={3} /> Demander à l'IA
+                        <MessageCircle className="w-4 h-4" strokeWidth={3} /> Demander à l&apos;IA
                     </Link>
                 </div>
             </main>

@@ -36,8 +36,8 @@ const Landing = () => {
                             <span className="text-qc-red">démêlées.</span>
                         </h1>
                         <p className="mt-6 text-lg sm:text-xl text-qc-inkSoft max-w-xl leading-relaxed">
-                            RAMQ, SAAQ, impôts, GAMF, logement... Notre assistant IA en français québécois t'explique
-                            tout, étape par étape. Pis y'a même tes rappels d'échéances qui suivent.
+                            RAMQ, SAAQ, impôts, GAMF, logement... Notre assistant IA en français québécois t&apos;explique
+                            tout, étape par étape. Pis y&apos;a même tes rappels d&apos;échéances qui suivent.
                         </p>
                         <div className="mt-8 flex flex-wrap gap-3">
                             <button onClick={handleStart} className="btn-yellow text-base" data-testid="hero-cta-start">
@@ -72,7 +72,7 @@ const Landing = () => {
                                         <MessageCircle className="w-6 h-6" strokeWidth={3} />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-sm">"Comment renouveler ma carte soleil?"</p>
+                                        <p className="font-bold text-sm">&quot;Comment renouveler ma carte soleil?&quot;</p>
                                         <p className="text-xs text-qc-inkSoft">Réponse en 4 étapes claires →</p>
                                     </div>
                                 </div>
@@ -94,8 +94,8 @@ const Landing = () => {
             {/* FEATURES BENTO */}
             <section id="features" className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
                 <div className="text-center mb-12">
-                    <h2 className="font-heading font-black text-4xl sm:text-5xl">Ce qu'Allô Québec fait pour toi</h2>
-                    <p className="mt-3 text-lg text-qc-inkSoft max-w-2xl mx-auto">Trois super-pouvoirs pour traverser l'administration sans perdre la tête.</p>
+                    <h2 className="font-heading font-black text-4xl sm:text-5xl">Ce qu&apos;Allô Québec fait pour toi</h2>
+                    <p className="mt-3 text-lg text-qc-inkSoft max-w-2xl mx-auto">Trois super-pouvoirs pour traverser l&apos;administration sans perdre la tête.</p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-6">
@@ -105,7 +105,7 @@ const Landing = () => {
                         </div>
                         <h3 className="font-heading font-bold text-2xl mb-2">Chat IA en français QC</h3>
                         <p className="text-qc-inkSoft leading-relaxed">
-                            Pose tes questions normalement. L'IA connaît RAMQ, SAAQ, impôts, logement et te répond avec des étapes claires et des liens officiels.
+                            Pose tes questions normalement. L&apos;IA connaît RAMQ, SAAQ, impôts, logement et te répond avec des étapes claires et des liens officiels.
                         </p>
                     </div>
 
@@ -113,7 +113,7 @@ const Landing = () => {
                         <div className="w-14 h-14 bg-qc-blue border-2 border-qc-ink rounded-xl flex items-center justify-center shadow-brutalSm mb-4">
                             <BellRing className="w-7 h-7" strokeWidth={3} />
                         </div>
-                        <h3 className="font-heading font-bold text-2xl mb-2">Rappels d'échéances</h3>
+                        <h3 className="font-heading font-bold text-2xl mb-2">Rappels d&apos;échéances</h3>
                         <p className="text-qc-inkSoft leading-relaxed">
                             Carte soleil qui expire? Impôts à faire? Tu reçois un rappel avant la date. Plus jamais en retard.
                         </p>
@@ -136,7 +136,7 @@ const Landing = () => {
                 <div className="card-brutal p-10 sm:p-14 text-center bg-qc-yellow">
                     <h2 className="font-heading font-black text-4xl sm:text-5xl mb-4">Prêt à arrêter de capoter?</h2>
                     <p className="text-lg sm:text-xl text-qc-ink mb-8 max-w-2xl mx-auto">
-                        Plus de 8 démarches déjà documentées. L'IA répond 24/7. C'est gratuit pour commencer.
+                        Plus de 8 démarches déjà documentées. L&apos;IA répond 24/7. C&apos;est gratuit pour commencer.
                     </p>
                     <button onClick={handleStart} className="btn-ink text-base" data-testid="bottom-cta-start">
                         Connecte-toi avec Google

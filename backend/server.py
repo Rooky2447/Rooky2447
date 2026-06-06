@@ -650,18 +650,23 @@ async def list_packages():
     return PREMIUM_PACKAGES
 
 
+def _make_stripe_checkout(request: Request) -> StripeCheckout:
+    """Build a configured StripeCheckout client for this request."""
+    if not STRIPE_API_KEY:
+        raise HTTPException(status_code=500, detail="Stripe non configuré")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}/api/webhook/stripe"
+    return StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+
+
 @api_router.post("/payments/checkout")
 async def create_checkout(payload: CheckoutPayload, request: Request):
     user = await require_user(request)
     pkg = PREMIUM_PACKAGES.get(payload.package_id)
     if not pkg:
         raise HTTPException(status_code=400, detail="Forfait invalide")
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe non configuré")
 
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = _make_stripe_checkout(request)
 
     success_url = f"{payload.origin_url.rstrip('/')}/payment/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{payload.origin_url.rstrip('/')}/pricing"
@@ -756,12 +761,7 @@ async def get_payment_status(session_id: str, request: Request):
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction introuvable")
 
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe non configuré")
-
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = _make_stripe_checkout(request)
 
     status_obj: Optional[CheckoutStatusResponse] = None
     try:
@@ -789,12 +789,7 @@ async def get_payment_status(session_id: str, request: Request):
 async def stripe_webhook(request: Request):
     body = await request.body()
     sig = request.headers.get("Stripe-Signature", "")
-    if not STRIPE_API_KEY:
-        raise HTTPException(status_code=500, detail="Stripe non configuré")
-
-    host_url = str(request.base_url)
-    webhook_url = f"{host_url.rstrip('/')}/api/webhook/stripe"
-    stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url=webhook_url)
+    stripe_checkout = _make_stripe_checkout(request)
     try:
         evt = await stripe_checkout.handle_webhook(body, sig)
     except Exception as e:
