@@ -9,51 +9,54 @@
 ## Architecture
 - **Frontend**: React 19 + React Router 7 + Tailwind + lucide-react. Neo-brutalist design.
 - **Backend**: FastAPI + Motor (async MongoDB). `/api` prefix.
-- **Auth**: Emergent-managed Google OAuth (session_token cookie + Bearer fallback).
-- **AI**: Claude Sonnet 4.5 (`claude-sonnet-4-6`) via emergentintegrations + Emergent Universal LLM Key.
-- **Payments**: Stripe Checkout via emergentintegrations (test key sk_test_emergent). 4.99 CAD per 30-day pass.
+- **Auth**: Emergent-managed Google OAuth.
+- **AI**: Claude Sonnet 4.5 (`claude-sonnet-4-6`) via emergentintegrations.
+- **Payments**: Stripe Checkout via emergentintegrations. 4.99 CAD per 30-day pass.
 - **DB**: `users`, `user_sessions`, `chat_sessions`, `chat_messages`, `reminders`, `guides`, `payment_transactions`.
 
-## Implemented
-### 2026-06-05 (Session 1) — MVP
-- Google login via Emergent Auth (with proper error UI on failure)
-- Landing page (hero, value props, bottom CTA) — neo-brutalist
-- Dashboard (greeting, quick actions, rappels CRUD, recent chats, featured guides)
-- AI Chat page (Claude Sonnet 4.5) — multi-turn, history persisted, suggestions
-- Guides library (8 démarches: RAMQ, SAAQ, GAMF, impôts, logement, AFE, Hydro, CNESST)
-- Guide detail (steps cochables, resources, FAQ, CTA to chat)
-- Mobile responsive, sticky header
-- Backend: 15/15 tests passing
+## Implemented Timeline
 
-### 2026-06-05 (Session 2) — Premium / Monetization
-- **Pricing page** `/pricing` (Free vs Pro 4.99$ CAD)
-- **Stripe Checkout** integration (`/api/payments/checkout`, `/api/payments/status/{id}`, `/api/webhook/stripe`)
-- **Free tier limit**: 10 AI messages / mois (returns 402 with upgrade CTA)
-- **Premium gating**: `users.premium_until` ISO date; chat bypasses limit when premium active
-- `/api/me/usage` endpoint exposes used/remaining/limit
-- Header shows "Pro" badge for premium users, "Passe Pro" CTA for free
-- ChatPage shows usage counter; limit-hit banner with upgrade link
-- Payment success page `/payment/success` with polling
-- 30-day passes stack correctly (max of now/current premium_until + 30)
-- Idempotency via `payment_transactions.premium_granted` flag
-- Backend: 26/26 tests passing
+### Session 1 — MVP (2026-06-05)
+- Google OAuth, Dashboard, AI Chat (Claude), 8 guides seedés, rappels CRUD
+- Tests: 15/15
 
-## Backlog (P1/P2)
-- **P1** Streaming SSE for chat
-- **P1** Email reminders via Resend/SendGrid (Premium only) — pre-promised in Pro plan
-- **P1** Dossier privé sécurisé (Premium only) — pre-promised in Pro plan
-- **P1** More guides: aide sociale, immigration, NAS, REER/CELI, mariage civil
-- **P2** Auto-renewing subscriptions (Stripe native) when growth justifies
-- **P2** Crowdsourced tips section
-- **P2** B2B portal for CJE/CLSC
+### Session 2 — Premium (2026-06-05)
+- Pricing page, Stripe Checkout, 10 msg/mois limit gratuit, premium unlimited
+- Tests: 26/26
+
+### Session 3 — Code Quality (2026-06-06)
+- Variables initialisées avant try blocks
+- `react/no-unescaped-entities` réglé (`&apos;` dans JSX text)
+- useMemo pour AuthContext value, useCallback pour logout
+- Catch blocks: console.error ajouté
+- Keys stables (content-based au lieu d'index)
+- `eslint.config.mjs` créé
+- Tests: 26/26
+
+### Session 4 — Refactor (2026-06-06)
+- **Dashboard.jsx** divisé en `QuickActions`, `RemindersSection` (avec `ReminderItem`), `RecentChats`, `FeaturedGuides`, `ReminderForm`
+- **ChatPage.jsx** divisé en `ChatHeader`, `ChatEmptyState`, `MessageBubble`, `ChatInput`
+- **Header.jsx** : `MobileMenu` extrait
+- Backend: helper `_make_stripe_checkout(request)` partagé entre create_checkout, get_payment_status, stripe_webhook
+- Linters: 0 blocking, 0 advisory (Python + JS)
+- Tests: 26/26 (zéro régression)
 
 ## Pricing
-- **Free**: 10 AI msgs/month + unlimited guides + unlimited rappels
-- **Pro**: $4.99 CAD per 30-day pass (manual renew) — unlimited AI, Pro badge, future email reminders + dossier privé
+- **Gratuit**: 10 msg IA/mois + tous les guides + rappels illimités
+- **Pro**: $4.99 CAD / 30 jours (renouvellement manuel) — IA illimitée + Pro badge
+
+## Backlog
+- **P1** Email reminders (Resend) — promesse Pro à honorer
+- **P1** Dossier privé sécurisé — promesse Pro à honorer
+- **P1** Streaming SSE pour le chat
+- **P1** Plus de guides : aide sociale, immigration, REER/CELI
+- **P2** Subscription auto-récurrent Stripe natif
+- **P2** Splitter server.py en routes/{auth,chat,payments,reminders,guides}.py (~837 lignes)
+- **P2** Sentry pour monitoring d'erreurs
 
 ## Key files
-- `/app/backend/server.py` — all API routes (~830 lines)
-- `/app/frontend/src/App.js` — routing + AuthProvider
-- `/app/frontend/src/pages/{Landing,Dashboard,ChatPage,GuidesPage,GuideDetail,AuthCallback,PricingPage,PaymentSuccess}.jsx`
-- `/app/frontend/src/components/{Header,ProtectedRoute}.jsx`
-- `/app/frontend/src/context/AuthContext.jsx`
+- Backend: `/app/backend/server.py`
+- Frontend pages: `/app/frontend/src/pages/{Landing,Dashboard,ChatPage,GuidesPage,GuideDetail,AuthCallback,PricingPage,PaymentSuccess}.jsx`
+- Components: `/app/frontend/src/components/{Header,MobileMenu,ProtectedRoute}.jsx`, `/app/frontend/src/components/dashboard/*.jsx`, `/app/frontend/src/components/chat/*.jsx`
+- Context: `/app/frontend/src/context/AuthContext.jsx`
+- Lint: `/app/frontend/eslint.config.mjs`
